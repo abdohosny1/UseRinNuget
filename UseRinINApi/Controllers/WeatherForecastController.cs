@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using UseRinINApi.Model;
+using UseRinINApi.services;
 
 namespace UseRinINApi.Controllers
 {
@@ -6,28 +8,33 @@ namespace UseRinINApi.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
+
 
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly WeatherApiService _weatherApiService;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, WeatherApiService weatherApiService)
         {
             _logger = logger;
+            _weatherApiService = weatherApiService;
         }
 
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+    
+        [HttpGet("GetWeatherData")]
+        public async Task<IActionResult> GetWeatherData([FromQuery] string cityName)
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            string apiKey = ""; // Replace with your actual OpenWeatherMap API key
+
+            try
             {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+                WeatherApiResponse result = await _weatherApiService.GetWeatherDataAsync(cityName, apiKey);
+                return Ok(result);
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
         }
     }
 }
